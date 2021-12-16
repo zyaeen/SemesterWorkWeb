@@ -1,5 +1,5 @@
 import './style.css'
-import * as THREE from 'three'
+import * as THREE from 'three';
 import {gsap} from "gsap";
 
 import {Elastic, Bounce, SteppedEase} from "gsap/all";
@@ -48,24 +48,18 @@ ship_params['orbit'] = 700;
 ship_params['size'] = 0.5
 
 
-/**
- * Sizes
- */
 const sizes = {
     width: window.innerWidth,
     height: window.innerHeight
 }
 
 window.addEventListener('resize', () => {
-    // Update sizes
     sizes.width = window.innerWidth
     sizes.height = window.innerHeight
 
-    // Update camera
     camera.aspect = sizes.width / sizes.height
     camera.updateProjectionMatrix()
 
-    // Update renderer
     renderer.setSize(sizes.width, sizes.height)
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
@@ -81,6 +75,22 @@ parameters.randomnessPower = 4
 parameters.insideColor = '#ff6030'
 parameters.outsideColor = '#1b3984'
 
+parameters.sun_mesh_rotate = 0.004
+
+parameters.planet1_mesh_rotate = 0.004
+parameters.planet2_mesh_rotate = 0.002
+parameters.planet3_mesh_rotate = 0.007
+parameters.planet4_mesh_rotate = 0.018
+parameters.planet5_mesh_rotate = 0.0038
+
+parameters.planet1_obj_rotate = -0.003
+parameters.planet2_obj_rotate = 0.0015
+parameters.planet3_obj_rotate = -0.001
+parameters.planet4_obj_rotate = 0.0008
+parameters.planet5_obj_rotate = 0.00009
+
+
+
 let geometry = null
 let material = null
 let points = null
@@ -88,12 +98,12 @@ let points = null
 // Planets
 
 let sun
-let mercury
-let venus
-let earth
-let mars
+let planet1
+let planet2
+let planet3
+let planet4
 let jupiter
-let saturn
+let planet5
 let uranus
 let neptune
 let pluto
@@ -124,20 +134,21 @@ window.addEventListener('dblclick', ()=>{
 const textures = {
 
     starsTexture: "https://i.imgur.com/gLGNnkp.jpeg",
-    sunTexture: "https://i.imgur.com/zU5oOjt.jpeg",
-    mercuryTexture: "https://i.imgur.com/TJO6Te3.jpeg",
-    venusTexture: "https://i.imgur.com/xeaPIjD.jpeg",
-    earthTexture: "https://i.imgur.com/vflkkqF.jpeg",
-    marsTexture: "https://i.imgur.com/U6upjrv.jpeg",
-    jupiterTexture: "https://i.imgur.com/4APG00k.jpeg",
-    saturnTexture: "https://i.imgur.com/YKw0m4x.jpeg",
-    saturnRingTexture: "https://i.imgur.com/u0muMiZ.png",
-    uranusTexture: "https://i.imgur.com/olpgGMo.jpeg",
-    uranusRingTexture: "https://i.imgur.com/F1y9Ve4.png",
-    neptuneTexture: "https://i.imgur.com/pycXdLM.jpeg",
-    plutoTexture:  "https://i.imgur.com/YNsmmHV.jpeg",
+    planet_one_texture: "https://i.imgur.com/zU5oOjt.jpeg",
+    planet_two_texture: "https://i.imgur.com/TJO6Te3.jpeg",
+    planet_three_texture: "https://i.imgur.com/xeaPIjD.jpeg",
+    planet_four_texture: "https://i.imgur.com/vflkkqF.jpeg",
+    planet_five_texture: "https://i.imgur.com/U6upjrv.jpeg",
+    planet_six_texture: "https://i.imgur.com/4APG00k.jpeg",
+    planet_seven_texture: "https://i.imgur.com/YKw0m4x.jpeg",
+    ring_one_texture: "https://i.imgur.com/u0muMiZ.png",
+    planet_eight_texture: "https://i.imgur.com/olpgGMo.jpeg",
+    ring_two_texture: "https://i.imgur.com/F1y9Ve4.png",
+    planet_nine_texture: "https://i.imgur.com/pycXdLM.jpeg",
+    planet_ten_texture:  "https://i.imgur.com/YNsmmHV.jpeg",
 
-}
+};
+
 let rot = false;
 rot = true;
 
@@ -150,7 +161,7 @@ function create_planet(size, texture, position, ring, ring_angle) {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.castShadow  = true
     mesh.receiveShadow = true
-    const obj = new THREE.Object3D();
+    const obj = new THREE.Group();
     obj.add(mesh);
     if (ring) {
         const ringGeo = new THREE.RingGeometry(
@@ -158,7 +169,6 @@ function create_planet(size, texture, position, ring, ring_angle) {
             ring.outerRadius,
             32
         );
-        // texture.receiveShadow = true;
         const ringMat = new THREE.MeshStandardMaterial({
             map: textureLoader.load(ring.texture),
             side: THREE.DoubleSide,
@@ -184,21 +194,17 @@ const create_sun = () => {
     sun = new THREE.Mesh(
         new THREE.SphereGeometry(200, 30, 30),
         new THREE.MeshBasicMaterial({
-            map: textureLoader.load(textures.sunTexture)
+            map: textureLoader.load(textures.planet_one_texture)
         })
     );
     const pointLight = new THREE.PointLight(0xffffff, 2.5, 10000);
     pointLight.castShadow = true
-    pointLight.shadow.bias = - 0.005; // reduces self-shadowing on double-sided objects
-    pointLight.shadowMapWidth = 1024; // default is 512
+    pointLight.shadow.bias = - 0.005;
+    pointLight.shadowMapWidth = 1024;
     pointLight.shadowMapHeight = 1024;
-    // pointLight.shadow.bias()
     sun.add(pointLight)
-    // scene.add(
-    //     // ambientLight,
-    //     // directionalLight,
-    //     pointLight
-    // );
+
+
     scene.add(sun);
 }
 
@@ -210,7 +216,6 @@ const generate_galaxy = () => {
         scene.remove(points)
     }
 
-    // Geometries
     geometry = new THREE.BufferGeometry()
     const positions = new Float32Array(parameters.count * 3)
     const colors = new Float32Array(parameters.count * 3)
@@ -245,26 +250,165 @@ const generate_galaxy = () => {
     geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
     geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3))
 
-    // Material
-
     material = new THREE.PointsMaterial({
-        size:parameters.size,
+        size: parameters.size,
         sizeAttenuation: true,
         depthWhite: false,
         blending: THREE.AdditiveBlending,
         vertexColors: true
     })
 
-    // Points
     points = new THREE.Points(geometry, material)
     scene.add(points)
 }
 
 
-// Creating Tardis
+var dx = 0, dy = 0;
+var speed = 100; // px per second
+
+var activeKey = 0;
+window.addEventListener('keydown', function(e) {
+    if (activeKey == e.keyCode) return;
+    activeKey = e.keyCode;
+
+    if (e.keyCode == 37) {
+        dx = -10;
+    }
+    else if (e.keyCode == 38) {
+        dy = 10;
+    }
+    else if (e.keyCode == 39) {
+        dx = 10;
+    }
+    else if (e.keyCode == 40) {
+        dy = -10;
+    }
+});
+window.addEventListener('keyup', function(e) {
+
+
+    if (e.keyCode == 32) {
+        gsap.to(sun.position, {
+            y: 0, x: 0,
+            duration: 5,
+        })
+    }
+
+
+});
+window.addEventListener('keyup', function(e) {
+    switch (e.keyCode) {
+        case 37:
+        case 39:
+            dx = 0;
+            break;
+
+        case 40:
+        case 38:
+            dy = 0;
+            break;
+    }
+
+    activeKey = 0;
+});
+
+function fun(){
+
+    sun.position.x += dx / 60 * speed;
+    sun.position.y += dy / 60 * speed;
+
+    requestAnimationFrame(fun);
+}
+requestAnimationFrame(fun);
 
 tardis = new THREE.Group()
+let flag = true;
+window.addEventListener("keyup", function (event) {
+    if (event.keyCode == 13) {
 
+        if (flag) {
+            flag = false;
+            gsap.to(planet1.obj.position, {
+                y: 700 + 400,
+                duration: 5,
+            })
+            gsap.to(planet2.obj.position, {
+                y: 1100,
+                duration: 5,
+            })
+            gsap.to(planet3.obj.position, {
+                y: 1100,
+                duration: 5,
+            })
+            gsap.to(planet4.obj.position, {
+                y: 1100,
+                duration: 5,
+            })
+            gsap.to(planet5.obj.position, {
+                y: 1100,
+                duration: 5,
+            })
+            gsap.to(text.position, {
+                y: -500,
+                duration: 5,
+            })
+            cloudParticles.forEach(p => {
+                gsap.to(p.position, {
+                    y: -500,
+                    duration: 5,
+                })
+            });
+            gsap.to(flash.position, {
+                y: -500,
+                duration: 5,
+            })
+            gsap.to(sun.position, {
+                y: 1100,
+                duration: 5,
+            })
+        } else {
+            flag = true;
+            gsap.to(planet1.obj.position, {
+                y: 0,
+                duration: 5,
+            })
+            gsap.to(planet2.obj.position, {
+                y: 0,
+                duration: 5,
+            })
+            gsap.to(planet3.obj.position, {
+                y: 0,
+                duration: 5,
+            })
+            gsap.to(planet4.obj.position, {
+                y: 0,
+                duration: 5,
+            })
+            gsap.to(planet5.obj.position, {
+                y: 0,
+                duration: 5,
+            })
+            gsap.to(text.position, {
+                y: 1000,
+                duration: 5,
+            })
+            cloudParticles.forEach(p => {
+                gsap.to(p.position, {
+                    y: 1000,
+                    duration: 5,
+                })
+            });
+            gsap.to(flash.position, {
+                y: 1000,
+                duration: 5,
+            })
+            gsap.to(sun.position, {
+                y: 0,
+                duration: 5,
+            })
+        }
+    }
+})
 
 const create_tardis = () => {
 
@@ -275,9 +419,9 @@ const create_tardis = () => {
         })
     );
     main_box.position.y = 50
-    // main_box.castShadow = true
     main_box.castShadow = true
     main_box.receiveShadow = true
+
     tardis.add(main_box)
 
     const main_material = new THREE.MeshBasicMaterial( {color: 0x003840 } );
@@ -299,10 +443,6 @@ const create_tardis = () => {
     );
     lantern.position.y = 170
 
-    // const lmp = new PointLight(0x062d89, 30, 10 ,1.7);
-    // lmp.position.y = 100;
-    // tardis.add(lmp)
-
     tardis.add(lantern)
 
     const lamp = new THREE.Mesh(
@@ -313,8 +453,6 @@ const create_tardis = () => {
     );
     lamp.position.y = 175
     tardis.add(lamp)
-
-    // Windows
 
     const window1 = new THREE.BoxGeometry( 126, 40, 35 );
     const materialWindow = new THREE.MeshBasicMaterial( {color: 0xFFFFFF} );
@@ -336,8 +474,6 @@ const create_tardis = () => {
     buffer_cube_two.position.x = -30
     tardis.add(buffer_cube_two)
     tardis.add(buffer_cube_one)
-
-    // Door cubes
 
     buffer_cube_one = new THREE.Mesh( window1, main_material );
     buffer_cube_one.position.y = 50
@@ -488,7 +624,6 @@ const make_fog = () => {
             );
             cloud.rotation.x = 0;
             cloud.rotation.y = 0;
-            // console.log(Math.random())
             cloud.rotation.z = Math.random() * 360;
 
             cloud.material.opacity = 0.7;
@@ -681,32 +816,32 @@ const createScene = () => {
 
     const distance = 400;
 
-    mercury = create_planet(80, textures.mercuryTexture, 700 + distance);
-    venus = create_planet(
+    planet1 = create_planet(80, textures.planet_two_texture, 700 + distance);
+    planet2 = create_planet(
         55,
-        textures.venusTexture,
+        textures.planet_three_texture,
         1500 + distance,
         {
             innerRadius: 60,
             outerRadius: 70,
-            texture: textures.saturnTexture
+            texture: textures.planet_seven_texture
         },
         -0.5
     );
-    earth = create_planet(60, textures.earthTexture, 2000 + distance);
-    mars = create_planet(45, textures.marsTexture, 2500 + distance,
+    planet3 = create_planet(60, textures.planet_four_texture, 2000 + distance);
+    planet4 = create_planet(45, textures.planet_five_texture, 2500 + distance,
         {
             innerRadius: 80,
             outerRadius: 120,
-            texture: textures.jupiterTexture
+            texture: textures.planet_six_texture
         },
         0.7
     );
-    saturn = create_planet(90, textures.saturnTexture, 3500 + distance,
+    planet5 = create_planet(90, textures.planet_seven_texture, 3500 + distance,
         {
             innerRadius: 100,
             outerRadius: 130,
-            texture: textures.plutoTexture
+            texture: textures.planet_ten_texture
         },
         -0.2
     );
@@ -715,21 +850,19 @@ const createScene = () => {
 }
 
 const start_sloar_system = () => {
-    sun.rotateY(0.004);
-    mercury.mesh.rotateY(0.004);
-    venus.mesh.rotateY(0.002);
-    earth.mesh.rotateY(0.007);
-    mars.mesh.rotateY(0.018);
-    saturn.mesh.rotateY(0.0038);
+    sun.rotateY(parameters.sun_mesh_rotate);
+    planet1.mesh.rotateY(parameters.planet1_mesh_rotate);
+    planet2.mesh.rotateY(parameters.planet2_mesh_rotate);
+    planet3.mesh.rotateY(parameters.planet3_mesh_rotate)
+    planet4.mesh.rotateY(parameters.planet4_mesh_rotate);
+    planet5.mesh.rotateY(parameters.planet5_mesh_rotate);
 
     if (rot) {
-
-        //Around-sun-rotation
-        mercury.obj.rotateY(-0.003);
-        venus.obj.rotateY(0.0015);
-        earth.obj.rotateY(-0.001);
-        mars.obj.rotateY(0.0008);
-        saturn.obj.rotateY(0.00009);
+        planet1.obj.rotateY(parameters.planet1_obj_rotate);
+        planet2.obj.rotateY(parameters.planet2_obj_rotate);
+        planet3.obj.rotateY(parameters.planet3_obj_rotate)
+        planet4.obj.rotateY(parameters.planet4_obj_rotate);
+        planet5.obj.rotateY(parameters.planet5_obj_rotate);
     }
 }
 
@@ -758,7 +891,6 @@ function get_new_coordinates(orbit, t) {
 const loop = () => {
 
     const t = (Date.now() % animationDuration) / animationDuration;
-    const t2 = (Date.now() % dur) / dur;
 
     renderer.render(scene, camera);
     const delta = target_tardis_position * Math.sin(Math.PI * 2 * t);
@@ -768,13 +900,6 @@ const loop = () => {
     }
 
     tardis.scale.set(ship_params['size'], ship_params['size'], ship_params['size'])
-
-
-    // var position = new THREE.Vector3();
-    // position.setFromMatrixPosition( tardis.matrixWorld )
-    // controls.target.copy( position  );
-    // controls.update();
-
 
     cloudParticles.forEach(p => {
         p.rotation.z -=0.01;
@@ -791,6 +916,9 @@ const loop = () => {
     window.requestAnimationFrame(loop);
 };
 
+
+
+
 const main = () => {
     createScene();
     generate_galaxy();
@@ -800,34 +928,41 @@ const main = () => {
         x: 700, y: 1000,
         duration: 10,
         yoyo: true, repeat: -1,
-        ease: "power2.inOut" //"strong.inOut"
+        ease: "power2.inOut"
     });
 
 
     renderer.setAnimationLoop(start_sloar_system);
 
-    const mercury_orbit = mercury.mesh.position.x
-    const venus_orbit = venus.mesh.position.x
-    const earth_orbit = earth.mesh.position.x
-    const mars_orbit = mars.mesh.position.x
-    const saturn_orbit = saturn.mesh.position.x
+    const mercury_orbit = planet1.mesh.position.x
+    const venus_orbit = planet2.mesh.position.x
+    const earth_orbit = planet3.mesh.position.x
+    const mars_orbit = planet4.mesh.position.x
+    const saturn_orbit = planet5.mesh.position.x
 
     renderer.render(scene, camera);
-    gui.add(tardis.position, 'z').min(0).max(1000).step(1);
     gui.add(tardis.rotation, 'x').min(0).max(5).step(0.01);
     gui.add(tardis.rotation, 'z').min(0).max(5).step(0.01);
     gui.add(ship_params, 'y_speed').min(0).max(10).step(0.01);
     gui.add(ship_params, 'orbit').min(40).max(1000).step(20);
     gui.add(ship_params, 'size').min(0.01).max(1).step(0.1);
 
+    gui.add(parameters, 'sun_mesh_rotate').min(0).max(0.01).step(0.001)
+
+    gui.add(parameters, 'planet1_mesh_rotate').min(0).max(0.01).step(0.001)
+    gui.add(parameters, 'planet2_mesh_rotate').min(0).max(0.01).step(0.001)
+    gui.add(parameters, 'planet3_mesh_rotate').min(0).max(0.01).step(0.001)
+    gui.add(parameters, 'planet4_mesh_rotate').min(0).max(0.01).step(0.001)
+    gui.add(parameters, 'planet5_mesh_rotate').min(0).max(0.01).step(0.001)
+
+    gui.add(parameters, 'planet1_obj_rotate').min(-0.01).max(0.01).step(0.001)
+    gui.add(parameters, 'planet2_obj_rotate').min(-0.01).max(0.01).step(0.001)
+    gui.add(parameters, 'planet3_obj_rotate').min(-0.01).max(0.01).step(0.001)
+    gui.add(parameters, 'planet4_obj_rotate').min(-0.01).max(0.01).step(0.001)
+    gui.add(parameters, 'planet5_obj_rotate').min(-0.01).max(0.01).step(0.001)
+
 
     gui.add(parameters, 'count').min(100).max(1000000).step(100).onFinishChange(generate_galaxy)
-    gui.add(parameters, 'size').min(0.001).max(0.1).step(0.001).onFinishChange(generate_galaxy)
-    gui.add(parameters, 'radius').min(0.01).max(20).step(0.01).onFinishChange(generate_galaxy)
-    gui.add(parameters, 'branches').min(2).max(20).step(1).onFinishChange(generate_galaxy)
-    gui.add(parameters, 'spin').min(-5).max(5).step(0.01).onFinishChange(generate_galaxy)
-    gui.add(parameters, 'randomness').min(0).max(2).step(0.01).onFinishChange(generate_galaxy)
-    gui.add(parameters, 'randomnessPower').min(1).max(10).step(0.01).onFinishChange(generate_galaxy)
     gui.addColor(parameters, 'insideColor').onFinishChange(generate_galaxy)
     gui.addColor(parameters, 'outsideColor').onFinishChange(generate_galaxy)
     loop();
