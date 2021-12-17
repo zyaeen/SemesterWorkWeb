@@ -2,16 +2,13 @@ import './style.css'
 import * as THREE from 'three';
 import {gsap} from "gsap";
 
-import {Elastic, Bounce, SteppedEase} from "gsap/all";
+import {Elastic} from "gsap/all";
 import {GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import * as dat from 'lil-gui'
 import {FontLoader} from "three/examples/jsm/loaders/FontLoader";
 import {TextGeometry} from "three/examples/jsm/geometries/TextGeometry"
-import {PointLight} from "three";
 
-import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader'
-import { MTLLoader } from 'three/examples/jsm/loaders/MTLLoader'
 
 // Needed vars
 
@@ -102,11 +99,8 @@ let planet1
 let planet2
 let planet3
 let planet4
-let jupiter
 let planet5
-let uranus
-let neptune
-let pluto
+
 
 let cloudParticles = [], flash, cloud;
 let text;
@@ -203,8 +197,6 @@ const create_sun = () => {
     pointLight.shadowMapWidth = 1024;
     pointLight.shadowMapHeight = 1024;
     sun.add(pointLight)
-
-
     scene.add(sun);
 }
 
@@ -264,7 +256,7 @@ const generate_galaxy = () => {
 
 
 var dx = 0, dy = 0;
-var speed = 100; // px per second
+var speed = 100;
 
 var activeKey = 0;
 window.addEventListener('keydown', function(e) {
@@ -312,14 +304,14 @@ window.addEventListener('keyup', function(e) {
     activeKey = 0;
 });
 
-function fun(){
+function moving(){
 
     sun.position.x += dx / 60 * speed;
     sun.position.y += dy / 60 * speed;
 
-    requestAnimationFrame(fun);
+    requestAnimationFrame(moving);
 }
-requestAnimationFrame(fun);
+requestAnimationFrame(moving);
 
 tardis = new THREE.Group()
 let flag = true;

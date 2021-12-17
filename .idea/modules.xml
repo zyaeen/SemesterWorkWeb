@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/3d-text.iml" filepath="$PROJECT_DIR$/.idea/3d-text.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/SemesterWorkWeb.iml" filepath="$PROJECT_DIR$/.idea/SemesterWorkWeb.iml" />
     </modules>
   </component>
 </project>
